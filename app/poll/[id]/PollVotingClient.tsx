@@ -18,19 +18,34 @@ export function PollVotingClient({ poll, initialResults, initialTotalVotes }: Po
   const storageKey = useMemo(() => `poll-voted-${poll.id}`, [poll.id]);
   const [selectedOptionId, setSelectedOptionId] = useState('');
   const [hasVoted, setHasVoted] = useState(false);
+  const [hasCheckedVoteStatus, setHasCheckedVoteStatus] = useState(false);
   const [results, setResults] = useState(initialResults);
   const [totalVotes, setTotalVotes] = useState(initialTotalVotes);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRefreshingResults, setIsRefreshingResults] = useState(false);
 
   useEffect(() => {
-    setHasVoted(window.localStorage.getItem(storageKey) === 'true');
+    const alreadyVoted = window.localStorage.getItem(storageKey) === 'true';
+    setHasVoted(alreadyVoted);
+    setHasCheckedVoteStatus(true);
+
+    if (alreadyVoted) {
+      void refreshResults();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey]);
 
   async function refreshResults() {
-    const nextResults = await getPollResults(poll.poll_options);
-    setResults(nextResults.rows);
-    setTotalVotes(nextResults.totalVotes);
+    setIsRefreshingResults(true);
+
+    try {
+      const nextResults = await getPollResults(poll.poll_options);
+      setResults(nextResults.rows);
+      setTotalVotes(nextResults.totalVotes);
+    } finally {
+      setIsRefreshingResults(false);
+    }
   }
 
   async function submitVote() {
@@ -126,14 +141,25 @@ export function PollVotingClient({ poll, initialResults, initialTotalVotes }: Po
 
       <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-stone-500">
-          {hasVoted ? 'Thanks for voting. Results are shown below.' : 'Choose one option, then submit your vote.'}
+          {hasVoted
+            ? 'This browser already voted. Current results are shown below.'
+            : 'Choose one option, then submit your vote to see results.'}
         </p>
-        <Button type="button" disabled={hasVoted || isSubmitting} onClick={submitVote}>
-          {hasVoted ? 'Vote saved' : isSubmitting ? 'Saving...' : 'Vote'}
+        <Button type="button" disabled={hasVoted || isSubmitting || !hasCheckedVoteStatus} onClick={submitVote}>
+          {hasVoted ? 'Already voted' : isSubmitting ? 'Saving...' : 'Vote'}
         </Button>
       </div>
 
-      {(hasVoted || totalVotes > 0) ? <Results rows={results} totalVotes={totalVotes} /> : null}
+      {hasVoted ? (
+        <div className="space-y-3">
+          {isRefreshingResults ? <p className="text-sm text-stone-500">Refreshing results...</p> : null}
+          <Results rows={results} totalVotes={totalVotes} />
+        </div>
+      ) : (
+        <div className="rounded-[2rem] border border-stone-200 bg-white p-5 text-sm text-stone-500 shadow-sm">
+          Results will appear after you vote.
+        </div>
+      )}
     </div>
   );
 }

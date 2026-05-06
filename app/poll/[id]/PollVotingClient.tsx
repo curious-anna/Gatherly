@@ -22,15 +22,27 @@ export function PollVotingClient({ poll, initialResults, initialTotalVotes }: Po
   const [totalVotes, setTotalVotes] = useState(initialTotalVotes);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRefreshingResults, setIsRefreshingResults] = useState(false);
 
   useEffect(() => {
     setHasVoted(window.localStorage.getItem(storageKey) === 'true');
   }, [storageKey]);
 
+  useEffect(() => {
+    void refreshResults();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [poll.id]);
+
   async function refreshResults() {
-    const nextResults = await getPollResults(poll.poll_options);
-    setResults(nextResults.rows);
-    setTotalVotes(nextResults.totalVotes);
+    setIsRefreshingResults(true);
+
+    try {
+      const nextResults = await getPollResults(poll.poll_options);
+      setResults(nextResults.rows);
+      setTotalVotes(nextResults.totalVotes);
+    } finally {
+      setIsRefreshingResults(false);
+    }
   }
 
   async function submitVote() {
@@ -126,14 +138,19 @@ export function PollVotingClient({ poll, initialResults, initialTotalVotes }: Po
 
       <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-stone-500">
-          {hasVoted ? 'Thanks for voting. Results are shown below.' : 'Choose one option, then submit your vote.'}
+          {hasVoted
+            ? 'This browser already voted. Current results are shown below.'
+            : 'Choose one option, then submit your vote.'}
         </p>
         <Button type="button" disabled={hasVoted || isSubmitting} onClick={submitVote}>
-          {hasVoted ? 'Vote saved' : isSubmitting ? 'Saving...' : 'Vote'}
+          {hasVoted ? 'Already voted' : isSubmitting ? 'Saving...' : 'Vote'}
         </Button>
       </div>
 
-      {(hasVoted || totalVotes > 0) ? <Results rows={results} totalVotes={totalVotes} /> : null}
+      <div className="space-y-3">
+        {isRefreshingResults ? <p className="text-sm text-stone-500">Refreshing results...</p> : null}
+        <Results rows={results} totalVotes={totalVotes} />
+      </div>
     </div>
   );
 }

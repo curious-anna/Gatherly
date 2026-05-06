@@ -18,6 +18,7 @@ export function PollVotingClient({ poll, initialResults, initialTotalVotes }: Po
   const storageKey = useMemo(() => `poll-voted-${poll.id}`, [poll.id]);
   const [selectedOptionId, setSelectedOptionId] = useState('');
   const [hasVoted, setHasVoted] = useState(false);
+  const [hasCheckedVoteStatus, setHasCheckedVoteStatus] = useState(false);
   const [results, setResults] = useState(initialResults);
   const [totalVotes, setTotalVotes] = useState(initialTotalVotes);
   const [error, setError] = useState('');
@@ -25,13 +26,15 @@ export function PollVotingClient({ poll, initialResults, initialTotalVotes }: Po
   const [isRefreshingResults, setIsRefreshingResults] = useState(false);
 
   useEffect(() => {
-    setHasVoted(window.localStorage.getItem(storageKey) === 'true');
-  }, [storageKey]);
+    const alreadyVoted = window.localStorage.getItem(storageKey) === 'true';
+    setHasVoted(alreadyVoted);
+    setHasCheckedVoteStatus(true);
 
-  useEffect(() => {
-    void refreshResults();
+    if (alreadyVoted) {
+      void refreshResults();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [poll.id]);
+  }, [storageKey]);
 
   async function refreshResults() {
     setIsRefreshingResults(true);
@@ -140,17 +143,23 @@ export function PollVotingClient({ poll, initialResults, initialTotalVotes }: Po
         <p className="text-sm text-stone-500">
           {hasVoted
             ? 'This browser already voted. Current results are shown below.'
-            : 'Choose one option, then submit your vote.'}
+            : 'Choose one option, then submit your vote to see results.'}
         </p>
-        <Button type="button" disabled={hasVoted || isSubmitting} onClick={submitVote}>
+        <Button type="button" disabled={hasVoted || isSubmitting || !hasCheckedVoteStatus} onClick={submitVote}>
           {hasVoted ? 'Already voted' : isSubmitting ? 'Saving...' : 'Vote'}
         </Button>
       </div>
 
-      <div className="space-y-3">
-        {isRefreshingResults ? <p className="text-sm text-stone-500">Refreshing results...</p> : null}
-        <Results rows={results} totalVotes={totalVotes} />
-      </div>
+      {hasVoted ? (
+        <div className="space-y-3">
+          {isRefreshingResults ? <p className="text-sm text-stone-500">Refreshing results...</p> : null}
+          <Results rows={results} totalVotes={totalVotes} />
+        </div>
+      ) : (
+        <div className="rounded-[2rem] border border-stone-200 bg-white p-5 text-sm text-stone-500 shadow-sm">
+          Results will appear after you vote.
+        </div>
+      )}
     </div>
   );
 }

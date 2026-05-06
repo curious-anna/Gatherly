@@ -1,12 +1,5 @@
-import { ArrowRight, Film, MessageSquareText, PartyPopper, Utensils } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { LinkButton } from '@/components/Button';
-
-const examples = [
-  { icon: Utensils, label: 'Restaurant picks' },
-  { icon: Film, label: 'Movie nights' },
-  { icon: PartyPopper, label: 'Event planning' },
-  { icon: MessageSquareText, label: 'Quick feedback' },
-];
 
 export default function HomePage() {
   return (
@@ -33,12 +26,6 @@ export default function HomePage() {
             <LinkButton href="/create" className="gap-2">
               Create a Poll <ArrowRight size={18} />
             </LinkButton>
-            <a
-              href="#examples"
-              className="inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-medium text-stone-600 transition hover:text-ink"
-            >
-              See examples
-            </a>
           </div>
         </div>
 
@@ -68,18 +55,6 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-      </section>
-
-      <section id="examples" className="grid gap-3 pb-8 sm:grid-cols-2 lg:grid-cols-4">
-        {examples.map((example) => {
-          const Icon = example.icon;
-          return (
-            <div key={example.label} className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm">
-              <Icon className="mb-4 text-stone-500" size={22} />
-              <p className="font-medium">{example.label}</p>
-            </div>
-          );
-        })}
       </section>
     </div>
   );

@@ -16,7 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main className="flex-1">{children}</main>
         <footer className="flex justify-center gap-4 py-4">
           <a
-            href="https://github.com/anna200122"
+            href="https://github.com/curious-anna"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="GitHub"
